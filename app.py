@@ -1,16 +1,82 @@
-# Import libraries
+from flask import Flask, request, url_for, redirect, render_template
 
-# Instantiate Flask functionality
 
-# Sample data
+app = Flask(__name__)
 
-# Read operation
 
-# Create operation
+transactions = [
+    {'id': 1, 'date': '2023-06-01', 'amount': 100},
+    {'id': 2, 'date': '2023-06-02', 'amount': -200},
+    {'id': 3, 'date': '2023-06-03', 'amount': 300}
+]
 
-# Update operation
+@app.route("/")
+def get_transactions():
+    return render_template("transactions.html", transactions = transactions)
 
-# Delete operation
 
-# Run the Flask app
-    
+@app.route("/add", methods=["GET", "POST"])
+def add_transaction():
+    if request.method == "POST":
+        transaction = {
+            "id": len(transactions) +1,
+            "date": request.form["date"],
+            "amount": float(request.form['amount'])
+        }
+        transactions.append(transaction)
+        return redirect(url_for("get_transactions"))
+    return render_template("form.html")
+
+
+@app.route("/edit/<int:transaction_id>", methods=["GET", "POST"])
+def edit_transaction(transaction_id):
+    if request.method == "POST":
+        date = request.form["date"]
+        amount = float(request.form["amount"])
+
+        for transaction in transactions:
+            if transaction["id"] == transaction_id:
+                transaction['date'] == date
+                transaction['amount'] == amount
+                break
+        return redirect(url_for("get_transactions"))
+
+    for transaction in transactions:
+        if transaction["id"] == transaction_id:
+            return render_template("edit.html", transaction= transaction)
+
+    return{"message":"Transaction not found"}, 404
+
+
+@app.route("/delete/<int:transaction_id>")
+def delete_transaction(transaction_id):
+    for transaction in transactions:
+        if transaction["id"] == transaction_id:
+            transactions.remove(transaction)
+            break
+    return redirect(url_for("get_transactions"))
+
+@app.route("/balance")
+def total_balance():
+    total= 0
+    for transaction in transactions:
+        total += transaction["amount"]
+    return (f"Total Balance: {total}")
+
+@app.route("/search", methods=["POST","GET"])
+def search_transactions():
+    if request.method == "POST":
+
+        user_min_value = float(request.form["min_amount"])
+        user_max_value = float(request.form["max_amount"])
+
+        new_list = []
+        for transaction in transactions:
+            if transaction["amount"] >= user_min_value and transaction["amount"] <= user_max_value:
+                new_list.append(transaction)
+        return render_template("transactions.html", transactions=new_list)
+    return render_template("search.html")
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
